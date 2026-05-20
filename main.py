@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+import os
 import sys
 import shutil
 import requests
@@ -21,6 +22,23 @@ def format_size(bytes_size: int) -> str:
             return f"{bytes_size:.2f} {unit}"
         bytes_size /= 1024
     return f"{bytes_size:.2f} PB"
+
+def get_api(token=None) -> HfApi:
+    """
+    Programmatic helper that checks if the primary HF server is responsive.
+    If it hits a connection reset/timeout, it seamlessly initializes the HfApi 
+    instance pointed to the stable mirror endpoint.
+    """
+    if os.environ.get("HF_ENDPOINT"):
+        return HfApi(token=token)
+        
+    try:
+        # A quick, low-overhead ping to test primary endpoint connectivity
+        requests.get("https://huggingface.co", timeout=2.0)
+        return HfApi(token=token)
+    except requests.RequestException:
+        # Seamlessly fallback behind the scenes for this specific runtime layout
+        return HfApi(endpoint="https://hf-mirror.com", token=token)
 
 def ensure_authenticated() -> str:
     """
@@ -72,21 +90,16 @@ def handle_diskspace(args):
     with Progress(SpinnerColumn(), TextColumn("[progress.description]{task.description}"), transient=True) as progress:
         progress.add_task(description=f"Querying 🤗 Hub for {repo_id}...", total=None)
         try:
-            # Check implicit or environment tokens first
-            api = HfApi()
+            api = get_api()
             model_info = api.model_info(repo_id=repo_id, files_metadata=True)
         except (GatedRepoError, LocalTokenNotFoundError, RepositoryNotFoundError) as e:
-            # If it's a gated repo error or missing credentials, trigger our interceptor loop
             if isinstance(e, RepositoryNotFoundError):
-                # Could be private! Let's double check by authenticating
                 console.print(f"[dim]Repo not found publicly. Checking if it is a private instance...[/dim]")
             
-            # Step in and ask the user for a token interactively
             active_token = ensure_authenticated()
             
-            # Retry with explicit token assignment
             try:
-                api = HfApi(token=active_token)
+                api = get_api(token=active_token)
                 model_info = api.model_info(repo_id=repo_id, files_metadata=True)
             except Exception as retry_error:
                 console.print(f"[bold red]Access Denied:[/bold red] Still unable to access '{repo_id}'.\n"
@@ -131,17 +144,19 @@ def handle_vibecheck(args):
     with Progress(SpinnerColumn(), TextColumn("[progress.description]{task.description}"), transient=True) as progress:
         progress.add_task(description=f"Auditing trends for {repo_id}...", total=None)
         try:
-            api = HfApi()
+            api = get_api()
             model_info = api.model_info(repo_id=repo_id)
-        except Exception:
-            # Interactive fallback check
+        except (GatedRepoError, LocalTokenNotFoundError, RepositoryNotFoundError):
             active_token = ensure_authenticated()
             try:
-                api = HfApi(token=active_token)
+                api = get_api(token=active_token)
                 model_info = api.model_info(repo_id=repo_id)
             except Exception as e:
                 console.print(f"[bold red]Error:[/bold red] Could not fetch data ({e})")
                 return
+        except Exception as e:
+            console.print(f"[bold red]Network Error:[/bold red] Could not connect to Hub endpoints ({e})")
+            return
 
     downloads = getattr(model_info, "downloads", 0)
     likes = getattr(model_info, "likes", 0)
@@ -181,26 +196,40 @@ def handle_vibecheck(args):
 # ==========================================
 def handle_peek(args):
     repo_id = args.repo_id
-    config_url = f"https://huggingface.co/{repo_id}/resolve/main/config.json"
+    base_endpoint = os.environ.get("HF_ENDPOINT", "https://huggingface.co")
+    config_url = f"{base_endpoint}/{repo_id}/resolve/main/config.json"
     
-    # Check if a token is present locally to forward as a header assignment
     token = get_token()
     headers = {"Authorization": f"Bearer {token}"} if token else {}
 
     with Progress(SpinnerColumn(), TextColumn("[progress.description]{task.description}"), transient=True) as progress:
         progress.add_task(description="Snatching config metadata...", total=None)
-        response = requests.get(config_url, headers=headers, timeout=10)
         
-        # Intercept gated/private responses (401 Unauthorized or 403 Forbidden)
+        try:
+            response = requests.get(config_url, headers=headers, timeout=10)
+        except requests.RequestException:
+            # If the base endpoint times out or drops, auto-rewrite the URL destination
+            if "huggingface.co" in config_url:
+                config_url = config_url.replace("huggingface.co", "hf-mirror.com")
+                response = requests.get(config_url, headers=headers, timeout=10)
+            else:
+                raise
+        
         if response.status_code in [401, 403]:
             progress.stop()
             active_token = ensure_authenticated()
             headers = {"Authorization": f"Bearer {active_token}"}
             
-            # Retry request explicitly
             with Progress(SpinnerColumn(), TextColumn("[progress.description]{task.description}"), transient=True) as retry_progress:
                 retry_progress.add_task(description="Retrying secure handshake...", total=None)
-                response = requests.get(config_url, headers=headers, timeout=10)
+                try:
+                    response = requests.get(config_url, headers=headers, timeout=10)
+                except requests.RequestException:
+                    if "huggingface.co" in config_url:
+                        config_url = config_url.replace("huggingface.co", "hf-mirror.com")
+                        response = requests.get(config_url, headers=headers, timeout=10)
+                    else:
+                        raise
 
         if response.status_code == 404:
             console.print(f"[bold yellow]Notice:[/bold yellow] No architecture 'config.json' found for {repo_id}.", style="yellow")
@@ -247,7 +276,7 @@ def handle_peek(args):
 # ==========================================
 def main():
     parser = argparse.ArgumentParser(
-        description="hf-toolbox: An extended utility suite for structural validation and hub metrics."
+        description="hf-kit: An extended utility suite for structural validation and hub metrics."
     )
     subparsers = parser.add_subparsers(dest="command", required=True, help="Subcommand to run")
     
