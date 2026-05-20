@@ -35,6 +35,7 @@ pip install -e .
 ### Usage & Commands
 
 #### 1. `diskspace`
+Pass a Huggingface repository path (<repo_id>) to check its total weight footprint against your available local storage space:
 
 ```bash
 hf-kit diskspace EleutherAI/gpt-j-6b
@@ -45,22 +46,25 @@ hf-kit diskspace EleutherAI/gpt-j-6b
 
 #### 2. `vibecheck`
 
+Pass a Huggingface repository ID (repo_id) to evaluate monthly usage trends, community traction, and lifecycle milestones:
+
 ```bash
 hf-kit vibecheck EleutherAI/gpt-j-6b
 
 ```
 
-![Vibe Check](screenshots/vibecheck.png)
+![Vibe Check](https://github.com/kuyesu/hf-tool/blob/main/screenshot/vibecheck.png)
 
 
 #### 3. `peek`
+Pass a Huggingface model identifier (<model_id>) to fetch and parse its metadata parameters instantly:
 
 ```bash
 hf-kit peek gpt2
 
 ```
 
-![Structural Architecture Peek](https://github.com/kuyesu/hf-tool/blob/main/screenshot/diskspace.png)
+![Structural Architecture Peek](https://github.com/kuyesu/hf-tool/blob/main/screenshot/peek.png)
 
 
 ### Private & Gated Repositories
