@@ -22,10 +22,10 @@ pip install hf-kit
 
 ```
 
-For local development mode:
+For local development mode and contributions:
 
 ```bash
-git clone [https://github.com/yourusername/hf-kit.git](https://github.com/yourusername/hf-kit.git)
+git clone [https://github.com/kuyesu/hf-tool.git](https://github.com/kuyesu/hf-tool.git)
 cd hf-kit
 pip install -e .
 
