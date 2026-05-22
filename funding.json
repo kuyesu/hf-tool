@@ -39,30 +39,33 @@
       }
     ],
     "plans": [
-          {
-            "guid": "infra-hosting",
-            "status": "active",
-            "name": "Proxy Infrastructure & Log Hosting",
-            "description": "Funding global API execution proxies, data persistence layers in MongoDB Atlas, and production server host nodes to scale the public Option A tier configuration.",
-            "amount": 3500,
-            "currency": "USD"
-          },
-          {
-            "guid": "core-development",
-            "status": "active",
-            "name": "Advanced Feature Engineering",
-            "description": "Engineering advanced execution tools, implementing broader model support matrixes, and optimizing dynamic pre-flight caching layers to keep stream performance high.",
-            "amount": 8000,
-            "currency": "USD"
-          },
-          {
-            "guid": "security-audit",
-            "status": "active",
-            "name": "Security & Sandbox Hardening",
-            "description": "Auditing local shell runtime interception processes and strengthening user privacy constraints within the centralized proxy telemetry layers.",
-            "amount": 1500,
-            "currency": "USD"
-          }
-        ]
+      {
+        "guid": "infra-hosting",
+        "status": "active",
+        "frequency": "one-time",
+        "name": "Proxy Infrastructure & Log Hosting",
+        "description": "Funding global API execution proxies, data persistence layers in MongoDB Atlas, and production server host nodes to scale the public Option A tier configuration.",
+        "amount": 3500,
+        "currency": "USD"
+      },
+      {
+        "guid": "core-development",
+        "status": "active",
+        "frequency": "one-time",
+        "name": "Advanced Feature Engineering",
+        "description": "Engineering advanced execution tools, implementing broader model support matrixes, and optimizing dynamic pre-flight caching layers to keep stream performance high.",
+        "amount": 8000,
+        "currency": "USD"
+      },
+      {
+        "guid": "security-audit",
+        "status": "active",
+        "frequency": "one-time",
+        "name": "Security & Sandbox Hardening",
+        "description": "Auditing local shell runtime interception processes and strengthening user privacy constraints within the centralized proxy telemetry layers.",
+        "amount": 1500,
+        "currency": "USD"
+      }
+    ]
   }
 }
