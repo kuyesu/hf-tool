@@ -168,7 +168,7 @@ def run_sharing_engine_pipeline() -> bool:
         "sender_name": sender_name 
     }
     
-    console.print("\n[dim]⚡ Wait while we send your email...[/dim]")
+    console.print("\n[dim]⚡ Wait while we send the email...[/dim]")
     try:
         base_url = PROXY_SERVER_URL.replace("/v1", "")
         response = requests.post(f"{base_url}/v1/share", json=payload, headers=headers, timeout=20)
