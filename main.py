@@ -279,41 +279,47 @@ def main():
     # Capture everything after 'hf-bot' command invocation
     args = sys.argv[1:]
     
-    # CASE 1: No arguments provided (e.g., 'hf-bot')
+    # 🎯 STEP 1: Intercept structural utility subcommands BEFORE booting the agent
+    utility_commands = {"diskspace", "vibecheck", "peek"}
+    
+    if args and args[0].strip().lower() in utility_commands:
+        # Let argparse process the matching sub-command blocks natively
+        parser = argparse.ArgumentParser(
+            description="hf-bot: An extended utility suite for structural validation and hub metrics."
+        )
+        subparsers = parser.add_subparsers(dest="command", required=True, help="Subcommand to run")
+        
+        ds_parser = subparsers.add_parser("diskspace", help="Evaluate local disk availability against model weights size")
+        ds_parser.add_argument("repo_id", type=str, help="Hugging Face Repository identifier")
+        ds_parser.set_defaults(func=handle_diskspace)
+        
+        vc_parser = subparsers.add_parser("vibecheck", help="Assess model momentum, downloads, and lifecycle status")
+        vc_parser.add_argument("repo_id", type=str, help="Hugging Face Repository identifier")
+        vc_parser.set_defaults(func=handle_vibecheck)
+        
+        pk_parser = subparsers.add_parser("peek", help="Download tiny header maps to analyze structural parameters")
+        pk_parser.add_argument("repo_id", type=str, help="Hugging Face Repository identifier")
+        pk_parser.set_defaults(func=handle_peek)
+        
+        parsed_args = parser.parse_args()
+        parsed_args.func(parsed_args)
+        return  # Exit cleanly so the interactive agent loop doesn't spin up up right after
+
+    # 🎯 STEP 2: Fallback routing straight to the interactive agent loop
+    # CASE A: No arguments provided (e.g., 'hf-bot')
     if not args:
         initial_prompt = ""
         
-    # CASE 2: Explicit command keyword provided (e.g., 'hf-bot start')
+    # CASE B: Explicit command keyword provided (e.g., 'hf-bot start')
     elif args[0].strip().lower() == "start":
-        # If they wrote 'hf-bot start "some string"', use the trailing arguments,
-        # otherwise default to a clean slate initialization parameter
         initial_prompt = " ".join(args[1:]) if len(args) > 1 else ""
         
-    # CASE 3: Inline prompt provided directly (e.g., hf-bot "check popularity...")
+    # CASE C: Inline conversational prompt provided directly (e.g., hf-bot "how do I use git...")
     else:
         initial_prompt = " ".join(args)
 
     # Boot up the interactive agent session
     run_agent(initial_prompt)
-    parser = argparse.ArgumentParser(
-        description="hf-bot: An extended utility suite for structural validation and hub metrics."
-    )
-    subparsers = parser.add_subparsers(dest="command", required=True, help="Subcommand to run")
-    
-    ds_parser = subparsers.add_parser("diskspace", help="Evaluate local disk availability against model weights size")
-    ds_parser.add_argument("repo_id", type=str, help="Hugging Face Repository identifier")
-    ds_parser.set_defaults(func=handle_diskspace)
-    
-    vc_parser = subparsers.add_parser("vibecheck", help="Assess model momentum, downloads, and lifecycle status")
-    vc_parser.add_argument("repo_id", type=str, help="Hugging Face Repository identifier")
-    vc_parser.set_defaults(func=handle_vibecheck)
-    
-    pk_parser = subparsers.add_parser("peek", help="Download tiny header maps to analyze structural parameters")
-    pk_parser.add_argument("repo_id", type=str, help="Hugging Face Repository identifier")
-    pk_parser.set_defaults(func=handle_peek)
-    
-    args = parser.parse_args()
-    args.func(args)
 
 if __name__ == "__main__":
     main()
