@@ -35,8 +35,10 @@
         "guid": "github-sponsors-channel",
         "type": "other",
         "name": "GitHub Sponsors",
-        "description": "Direct financial backing portal for the hf-bot software lifecycle infrastructure overhead.",
-        "plans": [
+        "description": "Direct financial backing portal for the hf-bot software lifecycle infrastructure overhead."
+      }
+    ],
+    "plans": [
           {
             "guid": "infra-hosting",
             "status": "active",
@@ -62,7 +64,5 @@
             "currency": "USD"
           }
         ]
-      }
-    ]
   }
 }
